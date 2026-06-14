@@ -1,11 +1,4 @@
 {
-  "files": [],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    },
-    {
-      "path": "./tsconfig.app.json"
-    }
-  ]
+  // Nuxt generates a fully featured tsconfig at .nuxt/tsconfig.json
+  "extends": "./.nuxt/tsconfig.json"
 }
