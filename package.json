@@ -15,7 +15,7 @@
   "dependencies": {
     "@primeuix/themes": "^2.0.3",
     "@primevue/nuxt-module": "^4.5.5",
-    "node-ical": "^0.26.1",
+    "ical.js": "^2.2.1",
     "nuxt": "^4.4.8",
     "primeicons": "^7.0.0",
     "primevue": "^4.5.5",

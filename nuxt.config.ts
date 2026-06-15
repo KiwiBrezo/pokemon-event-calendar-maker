@@ -30,6 +30,8 @@ export default defineNuxtConfig({
   },
 
   app: {
+    // Deployed as static files under this sub-path on the nginx server.
+    baseURL: '/pokemon-event-calendar/',
     head: {
       title: 'Pokémon Event Calendar',
       htmlAttrs: { lang: 'en', class: 'app-dark' },

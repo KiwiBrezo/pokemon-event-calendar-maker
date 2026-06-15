@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Web app that turns a **public Google Calendar iCal feed** into a clean, dark, shareable web calendar. The user pastes a public `.ics` URL on `/`, the app fetches + parses it server-side and renders a month-grid calendar showing only events. Longer-term goals (not built yet): styled Pokémon-themed icons/events, and deterrents against screenshotting/exporting the calendar image.
+Web app that turns a **public Google Calendar iCal feed** into a clean, dark, shareable web calendar. The user pastes a public `.ics` URL on `/`, the app fetches + parses it **in the browser** and renders a month-grid calendar showing only events. Longer-term goals (not built yet): styled Pokémon-themed icons/events, and deterrents against screenshotting/exporting the calendar image.
+
+**Deployment:** built as a **static site** (`npm run generate`) served by **nginx** under the base path `/pokemon-event-calendar/`. Because Google Calendar feeds send no CORS headers, the browser fetches the `.ics` through a same-origin proxy path (`<base>/ical/**`) that nginx `proxy_pass`es to `calendar.google.com`. See `deploy/nginx.conf`.
 
 ## Commands
 
@@ -21,13 +23,14 @@ No test runner is configured yet.
 
 ## Stack & architecture
 
-- **Nuxt 4** (Vue 3.5, Nitro server) + **Tailwind v4** + **PrimeVue 4** (buttons/inputs only) + **hand-written CSS** for the calendar grid. Dark mode is forced.
-- **Nuxt 4 directory layout:** app code lives under `app/` (`app/app.vue`, `app/pages/`, `app/components/`, `app/assets/`). Server code under `server/`. Cross-cutting types under `shared/` (referenced as `~~/shared/...`).
-- **Data flow (why Nuxt):** the browser never fetches the calendar directly (CORS + no API key). Instead:
-  - `server/api/events.get.ts` — Nitro route. Takes `?url=`, normalizes `webcal://`→`https://`, fetches the `.ics` text, parses with **node-ical**, expands recurring events (`rrule.between`, honoring `exdate`) within a window (−6 / +18 months), and returns a flat `{ events: CalendarEvent[] }`.
-  - `app/pages/index.vue` — URL input (PrimeVue) + `$fetch('/api/events')`, holds the event list, renders `<EventCalendar>`.
-  - `app/components/EventCalendar.vue` — pure presentational month grid (Monday-first, 42 cells), groups events by local date, prev/next/today nav. All styling is scoped hand-written CSS.
-- **Shared type:** `CalendarEvent` in `shared/types/event.ts` is the single contract between server route and UI.
+- **Nuxt 4** (Vue 3.5, static/SSG) + **Tailwind v4** + **PrimeVue 4** (buttons/inputs only) + **hand-written CSS** for the calendar grid. Dark mode is forced.
+- **Nuxt 4 directory layout:** app code lives under `app/` (`app/app.vue`, `app/pages/`, `app/components/`, `app/composables/`, `app/assets/`). Cross-cutting types under `shared/` (referenced as `~~/shared/...`). `server/` is currently empty — there is no runtime server in the static deploy.
+- **Data flow (client-side):** the feed is fetched + parsed entirely in the browser; the same-origin `<base>/ical/**` proxy (nginx in prod, a Nitro `routeRules` proxy in dev) only relays the raw `.ics` bytes from Google to dodge CORS.
+  - `app/composables/useCalendarFeed.ts` — `fetchCalendarEvents(url)`: normalizes `webcal://`→`https://`, maps a Google `.ics` URL onto the same-origin `<base>/ical/...` path, `$fetch`es the text, parses with **ical.js**, expands recurring events (iterator honors `EXDATE`) within a window (−6 / +18 months). Returns `CalendarEvent[]`. Only `calendar.google.com` hosts are accepted (that's all the proxy forwards to).
+  - `app/composables/useEventStyles.ts` — shared per-**store** color store (auto-assigned palette + manual overrides) and the default pill icon.
+  - `app/pages/index.vue` — full-viewport page; a Settings `Dialog` holds the URL input and calls `fetchCalendarEvents`; renders `<EventCalendar>`.
+  - `app/components/EventCalendar.vue` — month grid (Monday-first, 42 cells) that fills the page; groups events by local date; per-event color + tier-icon detection; click a pill to edit its store color. All styling is scoped hand-written CSS.
+- **Shared type:** `CalendarEvent` in `shared/types/event.ts` is the single contract between the feed parser and the UI.
 
 ## Theming / dark mode
 
@@ -38,7 +41,7 @@ No test runner is configured yet.
 
 - Vue components: PascalCase `.vue`, `<script setup lang="ts">`, Composition API.
 - Prettier (`.prettierrc.json`): no semicolons, single quotes, width 100.
-- All-day events depend on server/client sharing a timezone (single-user app); revisit if that assumption breaks.
+- All-day / timed events are interpreted in the **viewer's** local timezone (ical.js `Time.toJSDate()`); fine for a single-user app, revisit if that assumption breaks.
 
 ## Notes / gotchas
 

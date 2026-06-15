@@ -7,7 +7,10 @@ const loading = ref(false)
 const error = ref('')
 const hasGenerated = ref(false)
 
-async function generate() {
+// Open the settings modal by default until a calendar has been created.
+const showSettings = ref(true)
+
+async function create() {
   if (!url.value.trim()) {
     error.value = 'Please paste a public calendar URL first.'
     return
@@ -17,11 +20,11 @@ async function generate() {
   error.value = ''
 
   try {
-    const data = await $fetch('/api/events', { query: { url: url.value.trim() } })
-    events.value = data.events
+    events.value = await fetchCalendarEvents(url.value.trim())
     hasGenerated.value = true
+    showSettings.value = false
   } catch (e: any) {
-    error.value = e?.statusMessage || e?.data?.statusMessage || 'Something went wrong fetching the calendar.'
+    error.value = e?.message || 'Something went wrong fetching the calendar.'
     events.value = []
   } finally {
     loading.value = false
@@ -31,89 +34,107 @@ async function generate() {
 
 <template>
   <main class="page">
-    <section class="hero">
-      <h1 class="hero__title">Pokémon Event Calendar</h1>
-      <p class="hero__subtitle">
-        Paste the public iCal link of your Google Calendar and generate a clean, shareable calendar.
-      </p>
+    <div class="page__bar">
+      <Button
+        class="page__settings"
+        icon="pi pi-cog"
+        label="Settings"
+        severity="secondary"
+        aria-label="Calendar settings"
+        @click="showSettings = true"
+      />
+    </div>
 
-      <form class="generator" @submit.prevent="generate">
+    <EventCalendar :events="events" class="page__calendar" />
+
+    <Dialog
+      v-model:visible="showSettings"
+      modal
+      :draggable="false"
+      header="Calendar settings"
+      class="settings-dialog"
+    >
+      <form class="settings" @submit.prevent="create">
+        <label class="settings__label" for="cal-url">Public calendar URL</label>
         <InputText
+          id="cal-url"
           v-model="url"
-          class="generator__input"
+          class="settings__input"
           placeholder="https://calendar.google.com/calendar/ical/.../public/basic.ics"
           aria-label="Public calendar URL"
         />
-        <Button type="submit" label="Generate" icon="pi pi-sparkles" :loading="loading" />
+        <p class="settings__hint">
+          Paste the public iCal link of your Google Calendar and press Create.
+        </p>
+
+        <p v-if="error" class="settings__error">
+          <i class="pi pi-exclamation-triangle" /> {{ error }}
+        </p>
+
+        <div class="settings__actions">
+          <Button type="submit" label="Create" icon="pi pi-sparkles" :loading="loading" />
+        </div>
       </form>
-
-      <p v-if="error" class="generator__error">
-        <i class="pi pi-exclamation-triangle" /> {{ error }}
-      </p>
-    </section>
-
-    <section v-if="hasGenerated" class="result">
-      <p v-if="!events.length && !loading" class="result__empty">
-        No events found in this calendar.
-      </p>
-      <EventCalendar v-else :events="events" />
-    </section>
+    </Dialog>
   </main>
 </template>
 
 <style scoped>
 .page {
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 3rem 1.25rem 4rem;
-}
-
-.hero {
-  text-align: center;
-  margin-bottom: 2.5rem;
-}
-
-.hero__title {
-  margin: 0 0 0.5rem;
-  font-size: clamp(1.8rem, 4vw, 2.6rem);
-  font-weight: 700;
-  letter-spacing: -0.5px;
-}
-
-.hero__subtitle {
-  margin: 0 auto 2rem;
-  max-width: 540px;
-  color: var(--app-text-muted);
-  line-height: 1.5;
-}
-
-.generator {
+  height: 100dvh;
+  padding: 1.25rem;
+  overflow: hidden;
   display: flex;
-  gap: 0.6rem;
-  max-width: 640px;
-  margin: 0 auto;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.generator__input {
+.page__bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.page__calendar {
   flex: 1;
+  min-height: 0;
 }
 
-.generator__error {
+.settings {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(560px, 80vw);
+}
+
+.settings__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--app-text-muted);
+}
+
+.settings__input {
+  width: 100%;
+}
+
+.settings__hint {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--app-text-muted);
+  line-height: 1.45;
+}
+
+.settings__error {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 1rem auto 0;
+  margin: 0.25rem 0 0;
   color: #fca5a5;
   font-size: 0.9rem;
 }
 
-.result {
-  margin-top: 1rem;
-}
-
-.result__empty {
-  text-align: center;
-  color: var(--app-text-muted);
-  padding: 2rem 0;
+.settings__actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
 }
 </style>
