@@ -14,6 +14,15 @@ export default defineNuxtConfig({
 
   modules: ['@primevue/nuxt-module'],
 
+  runtimeConfig: {
+    public: {
+      // Default public Google Calendar (.ics) loaded automatically on first visit.
+      // Override at build time with NUXT_PUBLIC_DEFAULT_CALENDAR_URL.
+      defaultCalendarUrl:
+        'https://calendar.google.com/calendar/ical/7c7c4a1830cbd5083b696a7c054983dc4e219b9c61554373fdc0f178c609de21%40group.calendar.google.com/public/basic.ics',
+    },
+  },
+
   primevue: {
     options: {
       theme: {
