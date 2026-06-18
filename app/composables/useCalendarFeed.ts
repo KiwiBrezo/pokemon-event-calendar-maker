@@ -49,7 +49,7 @@ function toEvent(
 /**
  * Fetch a public Google Calendar feed (via the proxy) and parse it in the
  * browser with ical.js. Recurring events are expanded (EXDATE honored by the
- * iterator) within a window of −6 / +18 months around today.
+ * iterator) within a window of −24 / +12 months around today.
  */
 export async function fetchCalendarEvents(rawUrl: string): Promise<CalendarEvent[]> {
   const baseURL = useRuntimeConfig().app.baseURL
@@ -61,9 +61,9 @@ export async function fetchCalendarEvents(rawUrl: string): Promise<CalendarEvent
   const vevents = comp.getAllSubcomponents('vevent')
 
   const windowStart = new Date()
-  windowStart.setMonth(windowStart.getMonth() - 6)
+  windowStart.setMonth(windowStart.getMonth() - 24)
   const windowEnd = new Date()
-  windowEnd.setMonth(windowEnd.getMonth() + 18)
+  windowEnd.setMonth(windowEnd.getMonth() + 12)
 
   const events: CalendarEvent[] = []
 
