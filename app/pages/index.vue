@@ -50,6 +50,27 @@ onMounted(ensureLoaded)
   min-height: 0;
 }
 
+/* On phones, stop clamping the month into one viewport: let the page scroll
+   and the calendar (with its taller, content-sized rows) flow naturally. */
+@media (max-width: 640px) {
+  .page {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.5rem;
+  }
+
+  .page__stage {
+    display: block;
+    flex: none;
+  }
+
+  .page__calendar {
+    flex: none;
+  }
+}
+
 .loading-overlay {
   position: absolute;
   inset: 0;

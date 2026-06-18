@@ -241,4 +241,33 @@ async function recreate() {
   border-color: var(--app-text);
   box-shadow: 0 0 0 2px var(--app-surface) inset;
 }
+
+@media (max-width: 640px) {
+  .settings-page {
+    padding: 0.9rem;
+  }
+
+  .settings-page__title {
+    font-size: 1.3rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  /* Stack the store name above its color controls so the swatch row fits. */
+  .store {
+    flex-wrap: wrap;
+  }
+
+  .store__name {
+    flex: 1 1 auto;
+  }
+
+  .store__presets {
+    flex-wrap: wrap;
+    order: 3;
+    flex-basis: 100%;
+  }
+}
 </style>

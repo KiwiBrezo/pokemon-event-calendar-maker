@@ -136,6 +136,14 @@ function eventTime(ev: CalendarEvent): string {
   return new Date(ev.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+/** Days of the viewed month that have events — drives the mobile agenda view. */
+const agendaDays = computed(() => days.value.filter((d) => d.inMonth && d.events.length))
+
+/** Long-ish date label for agenda headers, e.g. "Mon, 9 Jun". */
+function dayLabel(d: Date): string {
+  return d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
 function shiftMonth(delta: number) {
   const next = new Date(viewYear.value, viewMonth.value + delta, 1)
   viewYear.value = next.getFullYear()
@@ -194,6 +202,43 @@ function goToday() {
           </li>
         </ul>
       </div>
+    </div>
+
+    <!-- Mobile-only agenda (list) view; the grid above is hidden on phones. -->
+    <div class="cal__agenda">
+      <template v-if="agendaDays.length">
+        <section
+          v-for="day in agendaDays"
+          :key="day.key"
+          class="agenda-day"
+          :class="{ 'agenda-day--today': day.isToday }"
+        >
+          <h3 class="agenda-day__date">{{ dayLabel(day.date) }}</h3>
+          <ul class="agenda-day__events">
+            <li
+              v-for="ev in day.events"
+              :key="ev.uid"
+              class="agenda-event"
+              :style="{ '--event-color': colorFor(ev) }"
+              @click="openEvent(ev)"
+            >
+              <img class="agenda-event__icon" :src="iconFor(ev)" alt="" />
+              <div class="agenda-event__body">
+                <span class="agenda-event__name">{{ ev.title }}</span>
+                <span class="agenda-event__time">{{ eventTime(ev) }}</span>
+              </div>
+              <i
+                v-if="eventType(ev)"
+                class="agenda-event__type"
+                :class="eventType(ev)!.icon"
+                :style="{ color: eventType(ev)!.color, fontSize: `${eventType(ev)!.size}px` }"
+                :title="eventType(ev)!.label"
+              />
+            </li>
+          </ul>
+        </section>
+      </template>
+      <p v-else class="agenda-empty">No events in {{ monthLabel }}.</p>
     </div>
 
     <Dialog
@@ -476,5 +521,136 @@ function goToday() {
   color: var(--app-text-muted);
   font-size: 0.85rem;
   text-transform: uppercase;
+}
+
+/* ---- Mobile agenda (list) view ----
+   The month grid is unreadable on phones, so below 640px we hide it and show a
+   scrollable, day-grouped list instead. */
+.cal__agenda {
+  display: none;
+}
+
+.agenda-day {
+  margin-bottom: 1rem;
+}
+
+.agenda-day__date {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin: 0 0 0.4rem;
+  padding: 0.3rem 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--app-text-muted);
+  background: var(--app-surface);
+}
+
+.agenda-day--today .agenda-day__date {
+  color: var(--app-accent);
+}
+
+.agenda-day__events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.agenda-event {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--event-color, var(--app-accent)) 16%, transparent);
+  border-left: 4px solid var(--event-color, var(--app-accent));
+  cursor: pointer;
+}
+
+.agenda-event:active {
+  transform: scale(0.99);
+}
+
+.agenda-event__icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.agenda-event__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.agenda-event__name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agenda-event__time {
+  font-size: 0.78rem;
+  color: var(--app-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.agenda-event__type {
+  flex: none;
+  line-height: 1;
+}
+
+.agenda-empty {
+  margin: 1.5rem 0;
+  text-align: center;
+  color: var(--app-text-muted);
+}
+
+@media (max-width: 640px) {
+  .cal {
+    padding: 0.7rem 0.8rem 0.9rem;
+    border-radius: 10px;
+    height: auto;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Title on top, month nav spread across its own full-width row, so it never
+     overflows narrow screens. */
+  .cal__bar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .cal__title {
+    font-size: 1.15rem;
+  }
+
+  .cal__nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Swap the grid for the agenda list. */
+  .cal__weekdays,
+  .cal__grid {
+    display: none;
+  }
+
+  .cal__agenda {
+    display: block;
+    flex: 1;
+  }
 }
 </style>
