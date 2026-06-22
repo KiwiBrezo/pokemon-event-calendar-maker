@@ -4,14 +4,33 @@
 :root {
   color-scheme: dark;
 
-  /* App palette (dark) */
-  --app-bg: #0e1014;
-  --app-surface: #161a21;
-  --app-surface-2: #1d222b;
-  --app-border: #2a313c;
-  --app-text: #e6e8eb;
-  --app-text-muted: #9aa3b1;
-  --app-accent: #ef4444;
+  /* Classic Game Boy (DMG) green ramp — used as accents on the dark base. */
+  --gb-0: #0f380f; /* darkest green */
+  --gb-1: #1e4d1e;
+  --gb-2: #306230; /* dark green */
+  --gb-3: #8bac0f; /* mid green */
+  --gb-4: #9bbc0f; /* light "screen" green */
+  --gb-screen: #cfe09a;
+
+  /* App palette (dark, GB-tinted) */
+  --app-bg: #0a0f0a;
+  --app-surface: #111a10;
+  --app-surface-2: #182315;
+  --app-border: #2f4a2a;
+  --app-text: #d7e8b8;
+  --app-text-muted: #7e9b5f;
+  --app-accent: #9bbc0f;
+  --app-accent-2: #8bac0f;
+
+  /* Pokéball red — kept for the loading animation only. */
+  --poke-red: #e23b3b;
+
+  /* Retro hard (no-blur) drop shadow used for the blocky chrome. */
+  --shadow-hard: 4px 4px 0 rgba(0, 0, 0, 0.55);
+
+  --font-mono:
+    ui-monospace, 'Cascadia Code', 'Cascadia Mono', 'Consolas', 'JetBrains Mono', 'Courier New',
+    monospace;
 }
 
 html,
@@ -22,14 +41,18 @@ body,
 
 body {
   margin: 0;
-  background: var(--app-bg);
+  background-color: var(--app-bg);
+  /* Subtle CRT scanlines + a soft green screen-glow from the top. */
+  background-image:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px),
+    radial-gradient(
+      130% 120% at 50% 0%,
+      color-mix(in srgb, var(--gb-2) 20%, transparent),
+      transparent 55%
+    );
+  background-attachment: fixed;
   color: var(--app-text);
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--font-mono);
   -webkit-font-smoothing: antialiased;
 }
 

@@ -114,7 +114,7 @@ onMounted(ensureLoaded)
 .pokeball__top {
   position: absolute;
   inset: 0 0 50% 0;
-  background: var(--app-accent);
+  background: var(--poke-red);
 }
 
 .pokeball__band {
@@ -152,7 +152,7 @@ onMounted(ensureLoaded)
 }
 
 .loading-overlay__bar :deep(.p-progressbar-value) {
-  background: var(--app-accent);
+  background: var(--poke-red);
 }
 
 .loading-overlay__label {

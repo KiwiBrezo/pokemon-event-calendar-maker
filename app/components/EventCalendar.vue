@@ -164,7 +164,10 @@ function goToday() {
 <template>
   <div class="cal">
     <header class="cal__bar">
-      <h2 class="cal__title">{{ monthLabel }}</h2>
+      <div class="cal__brand">
+        <span class="cal__logo" aria-hidden="true" />
+        <h2 class="cal__title">{{ monthLabel }}</h2>
+      </div>
       <div class="cal__nav">
         <Button icon="pi pi-chevron-left" severity="secondary" rounded text aria-label="Previous month" @click="shiftMonth(-1)" />
         <Button label="Today" severity="secondary" size="small" @click="goToday" />
@@ -310,10 +313,10 @@ function goToday() {
   flex-direction: column;
   height: 100%;
   background: var(--app-surface);
-  border: 1px solid var(--app-border);
-  border-radius: 14px;
+  border: 3px solid var(--gb-2);
+  border-radius: 4px;
   padding: 1rem 1.25rem 1.25rem;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 35%);
+  box-shadow: var(--shadow-hard);
 }
 
 .cal__bar {
@@ -323,17 +326,86 @@ function goToday() {
   margin-bottom: 1rem;
 }
 
+.cal__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Mini monochrome-green Pokéball, flat/pixel-styled to match the GB chrome. */
+.cal__logo {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--gb-0);
+  background:
+    radial-gradient(circle at 50% 50%, var(--gb-4) 0 2.5px, var(--gb-0) 2.5px 4px, transparent 4px),
+    linear-gradient(
+      to bottom,
+      var(--gb-4) 0 calc(50% - 1.5px),
+      var(--gb-0) calc(50% - 1.5px) calc(50% + 1.5px),
+      var(--app-surface) calc(50% + 1.5px) 100%
+    );
+  box-shadow: 0 0 8px color-mix(in srgb, var(--gb-4) 50%, transparent);
+}
+
 .cal__title {
   margin: 0;
-  font-size: 1.35rem;
-  font-weight: 600;
-  letter-spacing: 0.2px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gb-4);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--gb-4) 35%, transparent);
 }
 
 .cal__nav {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
+}
+
+/* Blocky Game Boy buttons: green LCD chrome, hard offset shadow, and a real
+   "press down" on click (button drops into its shadow). Overrides PrimeVue. */
+.cal__nav :deep(.p-button) {
+  border-radius: 3px;
+  border: 2px solid var(--gb-2);
+  background: var(--app-surface-2);
+  color: var(--gb-4);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.55);
+  transition:
+    transform 0.06s ease,
+    box-shadow 0.06s ease,
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.cal__nav :deep(.p-button:hover) {
+  background: color-mix(in srgb, var(--gb-2) 35%, var(--app-surface-2));
+  border-color: var(--gb-3);
+  color: var(--gb-4);
+}
+
+.cal__nav :deep(.p-button:active) {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+}
+
+.cal__nav :deep(.p-button:focus-visible) {
+  outline: 2px solid var(--gb-3);
+  outline-offset: 2px;
+}
+
+/* Square the round chevron buttons so the whole row reads as GB chrome. */
+.cal__nav :deep(.p-button-icon-only.p-button-rounded) {
+  border-radius: 3px;
+  width: 2.2rem;
+  height: 2.2rem;
 }
 
 .cal__weekdays {
@@ -345,12 +417,13 @@ function goToday() {
 
 .cal__weekday {
   text-align: center;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--app-text-muted);
-  padding: 4px 0;
+  letter-spacing: 1.5px;
+  color: var(--gb-3);
+  padding: 5px 0;
+  border-bottom: 2px solid var(--app-border);
 }
 
 .cal__grid {
@@ -367,37 +440,44 @@ function goToday() {
   display: flex;
   flex-direction: column;
   background: var(--app-surface-2);
-  border: 1px solid transparent;
-  border-radius: 9px;
+  border: 2px solid var(--app-border);
+  border-radius: 3px;
   padding: 6px 7px;
   min-height: 0;
   overflow: hidden;
-  transition: border-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
 }
 
 .cal__cell:hover {
-  border-color: var(--app-border);
+  border-color: var(--gb-3);
+  background: color-mix(in srgb, var(--gb-2) 18%, var(--app-surface-2));
 }
 
 .cal__cell--out {
-  opacity: 0.4;
+  opacity: 0.35;
 }
 
 .cal__cell--today {
-  border-color: var(--app-accent);
-  box-shadow: inset 0 0 0 1px var(--app-accent);
+  border-color: var(--gb-4);
+  box-shadow:
+    inset 0 0 0 1px var(--gb-4),
+    0 0 12px color-mix(in srgb, var(--gb-4) 45%, transparent);
 }
 
 .cal__date {
   display: inline-block;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   color: var(--app-text-muted);
   margin-bottom: 4px;
 }
 
 .cal__cell--today .cal__date {
-  color: var(--app-accent);
+  color: var(--gb-4);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--gb-4) 50%, transparent);
 }
 
 .cal__events {
@@ -419,9 +499,10 @@ function goToday() {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: color-mix(in srgb, var(--event-color, var(--app-accent)) 18%, transparent);
-  border-left: 3px solid var(--event-color, var(--app-accent));
-  border-radius: 5px;
+  background: color-mix(in srgb, var(--event-color, var(--app-accent)) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--event-color, var(--app-accent)) 40%, transparent);
+  border-left: 4px solid var(--event-color, var(--app-accent));
+  border-radius: 3px;
   padding: 2px 8px;
   font-size: 0.78rem;
   line-height: 1.25;
@@ -430,15 +511,17 @@ function goToday() {
   cursor: pointer;
   transition:
     background 0.12s ease,
-    transform 0.06s ease;
+    transform 0.06s ease,
+    box-shadow 0.12s ease;
 }
 
 .cal__event:hover {
-  background: color-mix(in srgb, var(--event-color, var(--app-accent)) 30%, transparent);
+  background: color-mix(in srgb, var(--event-color, var(--app-accent)) 34%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--event-color, var(--app-accent)) 35%, transparent);
 }
 
 .cal__event:active {
-  transform: scale(0.99);
+  transform: translate(1px, 1px);
 }
 
 .cal__event-icon {
@@ -551,17 +634,19 @@ function goToday() {
   top: 0;
   z-index: 1;
   margin: 0 0 0.4rem;
-  padding: 0.3rem 0;
-  font-size: 0.78rem;
+  padding: 0.35rem 0;
+  font-size: 0.76rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--app-text-muted);
+  letter-spacing: 1.2px;
+  color: var(--gb-3);
   background: var(--app-surface);
+  border-bottom: 2px solid var(--app-border);
 }
 
 .agenda-day--today .agenda-day__date {
-  color: var(--app-accent);
+  color: var(--gb-4);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--gb-4) 45%, transparent);
 }
 
 .agenda-day__events {
@@ -578,14 +663,15 @@ function goToday() {
   align-items: center;
   gap: 0.6rem;
   padding: 0.55rem 0.7rem;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--event-color, var(--app-accent)) 16%, transparent);
-  border-left: 4px solid var(--event-color, var(--app-accent));
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--event-color, var(--app-accent)) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--event-color, var(--app-accent)) 40%, transparent);
+  border-left: 5px solid var(--event-color, var(--app-accent));
   cursor: pointer;
 }
 
 .agenda-event:active {
-  transform: scale(0.99);
+  transform: translate(1px, 1px);
 }
 
 .agenda-event__icon {

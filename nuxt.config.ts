@@ -1,6 +1,10 @@
 import tailwindcss from '@tailwindcss/vite'
 import Aura from '@primeuix/themes/aura'
 
+// Full public sub-path the static site is served under (see app.baseURL below).
+// Reused for asset URLs (favicon) so they resolve under the same prefix.
+const baseURL = '/demo-server/pokemon-event-calendar/'
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-06-01',
@@ -41,11 +45,15 @@ export default defineNuxtConfig({
   app: {
     // Deployed as static files under this sub-path on the nginx server.
     // Must match the FULL public path (the demo-server prefix is part of the URL).
-    baseURL: '/demo-server/pokemon-event-calendar/',
+    baseURL,
     head: {
       title: 'Pokémon Event Calendar',
       htmlAttrs: { lang: 'en', class: 'app-dark' },
       meta: [{ name: 'viewport', content: 'width=device-width, initial-scale=1' }],
+      link: [
+        { rel: 'icon', type: 'image/svg+xml', href: `${baseURL}favicon.svg` },
+        { rel: 'alternate icon', type: 'image/x-icon', href: `${baseURL}favicon.ico` },
+      ],
     },
   },
 })
