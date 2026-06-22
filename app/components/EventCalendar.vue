@@ -3,12 +3,7 @@ import type { CalendarEvent } from '~~/shared/types/event'
 
 const props = defineProps<{ events: CalendarEvent[] }>()
 
-const { storeKey, colorFor, iconFor, setStoreColor } = useEventStyles()
-
-const PRESET_COLORS = [
-  '#ef4444', '#f59e0b', '#22c55e', '#3b82f6',
-  '#a855f7', '#ec4899', '#14b8a6', '#e6e8eb',
-]
+const { storeKey, colorFor, iconFor } = useEventStyles()
 
 /**
  * Event tiers, ordered most → least prestigious. The title is matched against
@@ -55,24 +50,13 @@ function openEvent(ev: CalendarEvent) {
   showEventDialog.value = true
 }
 
-/** Store of the selected event — editing recolors the whole store. */
+/** Store the selected event belongs to (title prefix before " - "). */
 const selectedStore = computed(() => (selectedEvent.value ? storeKey(selectedEvent.value) : ''))
 
-/** Reads/writes the selected store's color through the shared style store. */
-const editColor = computed({
-  get: () => (selectedEvent.value ? colorFor(selectedEvent.value) : '#ef4444'),
-  set: (v: string) => {
-    if (selectedStore.value) setStoreColor(selectedStore.value, v)
-  },
-})
-
-/** PrimeVue ColorPicker works with bare hex (no leading '#'). */
-const pickerHex = computed({
-  get: () => editColor.value.replace('#', ''),
-  set: (v: string) => {
-    editColor.value = v.startsWith('#') ? v : `#${v}`
-  },
-})
+/** Google Maps search link for a location string. */
+function mapsUrl(location: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`
+}
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 const MONTHS = [
@@ -134,6 +118,25 @@ const days = computed<DayCell[]>(() => {
 function eventTime(ev: CalendarEvent): string {
   if (ev.allDay) return 'All day'
   return new Date(ev.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+/** Full date label for the dialog, e.g. "Monday, 9 June 2026". */
+function eventDate(ev: CalendarEvent): string {
+  return new Date(ev.start).toLocaleDateString([], {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+/** Start–end time range for the dialog (or "All day"). */
+function eventTimeRange(ev: CalendarEvent): string {
+  if (ev.allDay) return 'All day'
+  const start = eventTime(ev)
+  if (!ev.end) return start
+  const end = new Date(ev.end).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  return `${start} – ${end}`
 }
 
 /** Days of the viewed month that have events — drives the mobile agenda view. */
@@ -248,40 +251,54 @@ function goToday() {
       :header="selectedEvent?.title || 'Event'"
       class="event-dialog"
     >
-      <div v-if="selectedEvent" class="event-edit">
-        <p class="event-edit__meta">
-          <i class="pi pi-clock" /> {{ eventTime(selectedEvent) }}
-          <template v-if="eventType(selectedEvent)">
-            <span class="event-edit__dot">·</span>
-            <i :class="eventType(selectedEvent)!.icon" :style="{ color: eventType(selectedEvent)!.color }" />
-            {{ eventType(selectedEvent)!.label }}
-          </template>
-        </p>
+      <ul v-if="selectedEvent" class="event-info">
+        <li class="event-info__row">
+          <i class="pi pi-calendar event-info__icon" />
+          <div class="event-info__text">
+            <span class="event-info__label">When</span>
+            <span class="event-info__value">{{ eventDate(selectedEvent) }}</span>
+            <span class="event-info__value event-info__value--muted">
+              {{ eventTimeRange(selectedEvent) }}
+            </span>
+          </div>
+        </li>
 
-        <div class="event-edit__field">
-          <span class="event-edit__label">Color</span>
-          <p class="event-edit__note">
-            <i class="pi pi-map-marker" /> Applies to all events at
-            <strong>{{ selectedStore }}</strong>
-          </p>
-          <div class="event-edit__swatches">
-            <button
-              v-for="c in PRESET_COLORS"
-              :key="c"
-              type="button"
-              class="swatch"
-              :class="{ 'swatch--active': editColor.toLowerCase() === c.toLowerCase() }"
-              :style="{ background: c }"
-              :aria-label="`Use color ${c}`"
-              @click="editColor = c"
-            />
+        <li v-if="selectedStore" class="event-info__row">
+          <i class="pi pi-shop event-info__icon" />
+          <div class="event-info__text">
+            <span class="event-info__label">Store</span>
+            <span class="event-info__value">{{ selectedStore }}</span>
           </div>
-          <div class="event-edit__custom">
-            <ColorPicker v-model="pickerHex" format="hex" />
-            <span class="event-edit__hex">{{ editColor }}</span>
+        </li>
+
+        <li v-if="eventType(selectedEvent)" class="event-info__row">
+          <i
+            class="event-info__icon"
+            :class="eventType(selectedEvent)!.icon"
+            :style="{ color: eventType(selectedEvent)!.color }"
+          />
+          <div class="event-info__text">
+            <span class="event-info__label">Type</span>
+            <span class="event-info__value">{{ eventType(selectedEvent)!.label }}</span>
           </div>
-        </div>
-      </div>
+        </li>
+
+        <li v-if="selectedEvent.location" class="event-info__row">
+          <i class="pi pi-map-marker event-info__icon" />
+          <div class="event-info__text">
+            <span class="event-info__label">Location</span>
+            <a
+              class="event-info__value event-info__link"
+              :href="mapsUrl(selectedEvent.location)"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {{ selectedEvent.location }}
+              <i class="pi pi-external-link event-info__link-icon" />
+            </a>
+          </div>
+        </li>
+      </ul>
     </Dialog>
   </div>
 </template>
@@ -449,78 +466,72 @@ function goToday() {
   line-height: 1;
 }
 
-.event-edit {
+.event-info {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   width: min(360px, 80vw);
 }
 
-.event-edit__meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-  color: var(--app-text-muted);
-  font-size: 0.9rem;
+.event-info__row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
 }
 
-.event-edit__field {
+.event-info__icon {
+  flex: none;
+  margin-top: 2px;
+  font-size: 1.05rem;
+  color: var(--app-accent);
+  line-height: 1;
+}
+
+.event-info__text {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 1px;
+  min-width: 0;
 }
 
-.event-edit__label {
-  font-size: 0.85rem;
+.event-info__label {
+  font-size: 0.72rem;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
   color: var(--app-text-muted);
 }
 
-.event-edit__note {
+.event-info__value {
+  font-size: 0.95rem;
+  color: var(--app-text);
+  word-break: break-word;
+}
+
+.event-info__value--muted {
+  font-size: 0.85rem;
+  color: var(--app-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.event-info__link {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--app-text-muted);
+  color: var(--app-accent);
+  text-decoration: none;
 }
 
-.event-edit__note strong {
-  color: var(--app-text);
+.event-info__link:hover {
+  text-decoration: underline;
 }
 
-.event-edit__swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.swatch {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-}
-
-.swatch--active {
-  border-color: var(--app-text);
-  box-shadow: 0 0 0 2px var(--app-surface) inset;
-}
-
-.event-edit__custom {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.event-edit__hex {
-  font-variant-numeric: tabular-nums;
-  color: var(--app-text-muted);
-  font-size: 0.85rem;
-  text-transform: uppercase;
+.event-info__link-icon {
+  flex: none;
+  font-size: 0.75rem;
 }
 
 /* ---- Mobile agenda (list) view ----
