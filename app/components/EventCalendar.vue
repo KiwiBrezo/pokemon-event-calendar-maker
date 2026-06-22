@@ -3,7 +3,7 @@ import type { CalendarEvent } from '~~/shared/types/event'
 
 const props = defineProps<{ events: CalendarEvent[] }>()
 
-const { storeKey, colorFor, iconFor } = useEventStyles()
+const { storeKey, colorFor, iconFor, isBigEvent } = useEventStyles()
 
 /**
  * Event tiers, ordered most → least prestigious. The title is matched against
@@ -23,6 +23,7 @@ interface EventType {
 // Patterns matched against the title. Tolerant of the feed's quirks: trailing
 // "s" (INTERNATIONALS/REGIONALS) and the recurring "CHALLANGE" typo.
 const EVENT_TYPES: EventType[] = [
+  { key: 'worlds', label: 'Worlds', icon: 'pi pi-crown', color: '#fde047', size: 19, match: /world/i },
   { key: 'international', label: 'International', icon: 'pi pi-globe', color: '#fbbf24', size: 18, match: /internationa/i },
   { key: 'regional', label: 'Regional', icon: 'pi pi-trophy', color: '#facc15', size: 17, match: /regional/i },
   { key: 'cup', label: 'League Cup', icon: 'pi pi-star-fill', color: '#e5e7eb', size: 15, match: /\bcup\b/i },
@@ -263,7 +264,7 @@ function goToday() {
           </div>
         </li>
 
-        <li v-if="selectedStore" class="event-info__row">
+        <li v-if="selectedStore && !isBigEvent(selectedStore)" class="event-info__row">
           <i class="pi pi-shop event-info__icon" />
           <div class="event-info__text">
             <span class="event-info__label">Store</span>

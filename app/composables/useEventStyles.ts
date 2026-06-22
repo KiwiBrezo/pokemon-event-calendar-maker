@@ -23,12 +23,34 @@ export const STORE_PALETTE = [
 const storeOverrides = reactive<Record<string, string>>({})
 
 /**
- * Derive the store key from the title. Titles are formatted "<Store> - <TIER>"
- * (e.g. "Kartenchaos - CHALLENGE"), so the store is the part before " - ".
- * `location` is a full street address here, so it's unreliable as a store key.
+ * Group keys for the big multi-venue events. WORLDS / INTERNATIONALS /
+ * REGIONALS aren't stores — they're large events that should each share a
+ * single color regardless of which venue hosts them.
+ */
+export const WORLDS_KEY = 'Worlds'
+export const REGIONALS_KEY = 'Regionals'
+export const INTERNATIONALS_KEY = 'Internationals'
+
+const BIG_EVENT_KEYS = new Set([WORLDS_KEY, REGIONALS_KEY, INTERNATIONALS_KEY])
+
+/** True for the big events that group by tier instead of by store. */
+export function isBigEvent(key: string): boolean {
+  return BIG_EVENT_KEYS.has(key)
+}
+
+/**
+ * Derive the color-grouping key from the title.
+ * - WORLDS / INTERNATIONALS / REGIONALS are big events: every instance shares
+ *   one key (and thus one color), no matter the venue.
+ * - Everything else groups by store: titles are formatted "<Store> - <TIER>"
+ *   (e.g. "Kartenchaos - CHALLENGE"), so the store is the part before " - ".
+ *   `location` is a full street address here, so it's unreliable as a store key.
  */
 export function storeKey(ev: CalendarEvent): string {
   const title = ev.title.trim()
+  if (/world/i.test(title)) return WORLDS_KEY
+  if (/internationa/i.test(title)) return INTERNATIONALS_KEY
+  if (/regional/i.test(title)) return REGIONALS_KEY
   const store = title.split(/\s+-\s+/)[0]?.trim()
   return store || title
 }
@@ -58,5 +80,5 @@ export function useEventStyles() {
     storeOverrides[store] = color
   }
 
-  return { storeKey, colorFor, iconFor, setStoreColor, storeOverrides }
+  return { storeKey, isBigEvent, colorFor, iconFor, setStoreColor, storeOverrides }
 }
